@@ -1,0 +1,14 @@
+application:
+  excludes:
+    - .
+  includes:
+    - /
+  hosts:
+    - host: 123.123.123.123
+      sites:
+        - google.com
+        - youtube.com
+    - host: 99.1.1.12
+      sites:
+        - facebook.com
+        - github.com
