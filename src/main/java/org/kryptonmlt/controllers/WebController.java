@@ -3,9 +3,12 @@ package org.kryptonmlt.controllers;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.conn.util.InetAddressUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.kryptonmlt.config.ApplicationProps;
+import org.kryptonmlt.config.FlashErrorHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -48,7 +51,14 @@ public class WebController {
         props.setProperty("jdk.httpclient.allowRestrictedHeaders", "host,connection");
         for (ApplicationProps.Server host : applicationProps.getHosts()) {
             for (String site : host.getSites()) {
+                String extraSite;
+                if (site.contains("www.")) {
+                    extraSite = site.replace("www.", "");
+                } else {
+                    extraSite = "www." + site;
+                }
                 sites.put(site, host);
+                sites.put(extraSite, host);
             }
         }
         try {
@@ -63,12 +73,14 @@ public class WebController {
             CloseableHttpClient httpClient
                     = HttpClients.custom()
                     .setSSLHostnameVerifier(new NoopHostnameVerifier())
+                    .setRedirectStrategy(new LaxRedirectStrategy())
                     .setSSLSocketFactory(csf)
                     .build();
             HttpComponentsClientHttpRequestFactory requestFactory
                     = new HttpComponentsClientHttpRequestFactory();
             requestFactory.setHttpClient(httpClient);
             restTemplate = new RestTemplate(requestFactory);
+            restTemplate.setErrorHandler(new FlashErrorHandler());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -76,7 +88,14 @@ public class WebController {
 
     @RequestMapping(value = "**", method = RequestMethod.GET)
     public ResponseEntity<String> get(HttpServletRequest request) {
-        ApplicationProps.Server server = sites.get(request.getRemoteHost());
+        String possibleHost = request.getRemoteHost();
+        if (InetAddressUtils.isIPv4Address(possibleHost) || InetAddressUtils.isIPv6Address(possibleHost)) {
+            String hostHeader = request.getHeader("host");
+            if (hostHeader != null && !hostHeader.isEmpty()) {
+                possibleHost = hostHeader;
+            }
+        }
+        ApplicationProps.Server server = sites.get(possibleHost);
         if (server != null) {
             int port = server.getHttpsPort();
             if (request.getScheme().equalsIgnoreCase("http")) {
