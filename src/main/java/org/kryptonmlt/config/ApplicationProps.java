@@ -24,6 +24,8 @@ public class ApplicationProps {
     public static class Server {
 
         private String host;
+        private int httpPort;
+        private int httpsPort;
         private List<String> sites;
 
     }
