@@ -23,11 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -37,6 +35,7 @@ public class WebController {
 
     private int timeoutMinutes = 1;
     private RestTemplate restTemplate;
+    private CloseableHttpClient httpClient;
 
     @Autowired
     private ApplicationProps applicationProps;
@@ -70,7 +69,7 @@ public class WebController {
             };
             SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
             SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier());
-            CloseableHttpClient httpClient
+            httpClient
                     = HttpClients.custom()
                     .setSSLHostnameVerifier(new NoopHostnameVerifier())
                     .setRedirectStrategy(new LaxRedirectStrategy())
@@ -87,7 +86,7 @@ public class WebController {
     }
 
     @RequestMapping(value = "**", method = RequestMethod.GET)
-    public ResponseEntity<String> get(HttpServletRequest request) {
+    public ResponseEntity<String> get(HttpServletRequest request, HttpServletResponse servResp) {
         String possibleHost = request.getRemoteHost();
         if (InetAddressUtils.isIPv4Address(possibleHost) || InetAddressUtils.isIPv6Address(possibleHost)) {
             String hostHeader = request.getHeader("host");
@@ -131,6 +130,7 @@ public class WebController {
 
                 HttpEntity<String> entity = new HttpEntity<String>("body", headerReq);
                 ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, entity, String.class);
+
                 return response;
             } catch (Exception e) {
                 e.printStackTrace();
