@@ -15,6 +15,7 @@ import java.util.Map;
 @NoArgsConstructor
 public class ApplicationProps {
 
+    private int timeoutSeconds;
     private List<String> excludes;
     private List<String> includes;
     private List<Server> hosts;

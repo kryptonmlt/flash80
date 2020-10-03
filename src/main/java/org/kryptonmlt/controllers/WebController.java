@@ -1,5 +1,6 @@
 package org.kryptonmlt.controllers;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
@@ -31,9 +32,9 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 
 @RestController
+@Slf4j
 public class WebController {
 
-    private int timeoutMinutes = 1;
     private RestTemplate restTemplate;
     private CloseableHttpClient httpClient;
 
@@ -78,6 +79,8 @@ public class WebController {
             HttpComponentsClientHttpRequestFactory requestFactory
                     = new HttpComponentsClientHttpRequestFactory();
             requestFactory.setHttpClient(httpClient);
+            requestFactory.setReadTimeout(applicationProps.getTimeoutSeconds() * 1000);
+            requestFactory.setConnectTimeout(applicationProps.getTimeoutSeconds() * 1000);
             restTemplate = new RestTemplate(requestFactory);
             restTemplate.setErrorHandler(new FlashErrorHandler());
         } catch (Exception e) {
@@ -106,6 +109,7 @@ public class WebController {
                     request.getRequestURI() +       // "/people"
                     (request.getQueryString() != null ? "?" +
                             request.getQueryString() : ""); // "?" + "lastname=Fox&age=30"
+            log.debug("URL: " + uri);
             MultiValueMap<String, String> headerReq = new LinkedMultiValueMap<>();
             boolean foundHost = false;
             Iterator<String> iter = request.getHeaderNames().asIterator();
@@ -130,13 +134,21 @@ public class WebController {
 
                 HttpEntity<String> entity = new HttpEntity<String>("body", headerReq);
                 ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, entity, String.class);
+                if (response.getStatusCodeValue() != 200) {
+                    if (response.getHeaders().get("location") != null) {
+                        log.debug("Received {} response with redirection: {}",response.getStatusCodeValue(),response.getHeaders().get("location"));
+                    }else{
+                        log.debug("Received {} response",response.getStatusCodeValue());
+                    }
 
+                }
                 return response;
             } catch (Exception e) {
-                e.printStackTrace();
+                log.debug("error making request to backend {}", server.getHost(), e);
                 return new ResponseEntity<>("Error accessing backend", HttpStatus.BAD_GATEWAY);
             }
         }
+        log.debug("site {} has no backend associated with it", possibleHost);
         return new ResponseEntity<>("Site not hosted on this server", HttpStatus.BAD_GATEWAY);
     }
 }
