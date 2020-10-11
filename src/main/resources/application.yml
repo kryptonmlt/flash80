@@ -8,11 +8,36 @@ server:
     key-store-password: flash80
     key-alias: flash80
 flash80:
+  cache:
+    minutes: 0
+    hours: 24
+    limit: 1000
+    geo: true
+    site: true
+    uri: true
+    requestParams: true
+    header:
+      - test
+    cookie:
+      - test
   timeoutSeconds: 10
   excludes:
-    - .
+    urls:
+      - ^[^.]+$
+      - backend
+      - wp-admin
+      - wp-login
+    headers:
+      - logged_in
+      - wp_logged_in
+    cookies:
+      - logged_in
+      - wp_logged_in
   includes:
-    - /
+    urls:
+      - .*
+    headers:
+    cookies:
   hosts:
     - host: 216.58.209.46
       httpPort: 80
