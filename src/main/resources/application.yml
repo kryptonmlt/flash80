@@ -14,15 +14,14 @@ flash80:
   includes:
     - /
   hosts:
-    - host: 123.123.123.123
+    - host: 216.58.209.46
       httpPort: 80
       httpsPort: 443
       sites:
         - google.com
         - youtube.com
-    - host: 99.1.1.12
+    - host: 31.13.86.36
       httpPort: 80
       httpsPort: 443
       sites:
         - facebook.com
-        - github.com
