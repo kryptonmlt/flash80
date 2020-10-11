@@ -15,7 +15,7 @@
 	<description>Webpage caching</description>
 
 	<properties>
-		<java.version>14</java.version>
+		<java.version>13</java.version>
 	</properties>
 
 	<dependencies>
