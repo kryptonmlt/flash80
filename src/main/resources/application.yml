@@ -9,6 +9,7 @@ server:
     key-alias: flash80
 flash80:
   cache:
+    cronmilliseconds: 60000
     minutes: 0
     hours: 24
     limit: 1000

@@ -1,5 +1,6 @@
 package org.kryptonmlt.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.kryptonmlt.config.ApplicationProps;
 import org.kryptonmlt.objects.CacheObject;
 import org.kryptonmlt.objects.Geo;
@@ -7,15 +8,15 @@ import org.kryptonmlt.utils.FlashUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import javax.annotation.PostConstruct;
+import java.util.*;
 
 @Component
+@Slf4j
 public class MemoryCache {
 
     private HashMap<String, CacheObject> cache = new HashMap<>();
@@ -23,17 +24,39 @@ public class MemoryCache {
     @Autowired
     private ApplicationProps applicationProps;
 
-    // TODO: IMPLEMENT LIMIT AND CACHE EXPIRY
+    private long cacheBustMS;
+
+    @PostConstruct
+    public void init() {
+        cacheBustMS = (applicationProps.getCache().getHours() * 60 * 60 * 1000) + (applicationProps.getCache().getMinutes() * 60 * 1000);
+    }
+
+    @Scheduled(fixedDelayString = "${flash80.cache.cronmilliseconds}", initialDelay = 1000 * 60)
+    public void cacheClearer() {
+        log.debug("Starting cache cleaning");
+        List<String> keysToDelete = new ArrayList<>();
+        for (String key : cache.keySet()) {
+            if ((cache.get(key).getCreated().getTime() - cacheBustMS) > 0) {
+                keysToDelete.add(key);
+            }
+        }
+        log.debug("Deleting {} objects from cache", keysToDelete.size());
+        // LOCK cache
+        for (String key : keysToDelete) {
+            cache.remove(key);
+        }
+
+    }
 
     public boolean isCacheable(String site, String uri, String requestParams, MultiValueMap<String, String> headers) {
         String url = site + uri + requestParams;
 
-        if (isMatch(url, applicationProps.getIncludes().getUrls())
-                || isMatch(headers, applicationProps.getIncludes().getHeaders())
-                || isMatch(headers, applicationProps.getIncludes().getCookies())) {
-            if (!isMatch(url, applicationProps.getExcludes().getUrls())
-                    || !isMatch(headers, applicationProps.getExcludes().getHeaders())
-                    || !isMatch(headers, applicationProps.getExcludes().getCookies())) {
+        if (FlashUtils.isMatch(url, applicationProps.getIncludes().getUrls())
+                || FlashUtils.isMatch(headers, applicationProps.getIncludes().getHeaders())
+                || FlashUtils.isMatch(headers, applicationProps.getIncludes().getCookies())) {
+            if (!FlashUtils.isMatch(url, applicationProps.getExcludes().getUrls())
+                    || !FlashUtils.isMatch(headers, applicationProps.getExcludes().getHeaders())
+                    || !FlashUtils.isMatch(headers, applicationProps.getExcludes().getCookies())) {
                 return true;
             }
         }
@@ -45,39 +68,11 @@ public class MemoryCache {
         return cache.get(key);
     }
 
-    private boolean isMatch(String word, String[] list) {
-        if (list.length > 0) {
-            for (String toCheck : list) {
-                if (word.matches(toCheck)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean isMatch(String[] words, String[] list) {
-        for (String word : words) {
-            if (isMatch(word, list)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean isMatch(MultiValueMap<String, String> headers, String[] list) {
-        for (String header : headers.keySet()) {
-            List<String> headerContents = headers.get(header);
-            String[] itemsArray = new String[headerContents.size()];
-            if (isMatch(headerContents.toArray(itemsArray), list)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
     public CacheObject save(Geo geo, String site, String uri, String requestParams, ResponseEntity<String> response) {
+
+        if (cache.size() > applicationProps.getCache().getLimit()) {
+            return null;
+        }
 
         if (this.isCacheable(site, uri, requestParams, response.getHeaders())) {
             String key = this.buildCacheKey(geo, site, uri, requestParams);

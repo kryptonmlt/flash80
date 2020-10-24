@@ -2,10 +2,14 @@ package org.kryptonmlt.utils;
 
 import org.kryptonmlt.objects.CacheObject;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
+import java.util.List;
 
 public class FlashUtils {
+
     private FlashUtils() {
 
     }
@@ -19,6 +23,7 @@ public class FlashUtils {
         cacheObject.setData(response.getBody());
         cacheObject.setHeaders(response.getHeaders());
         cacheObject.setStatusCode(response.getStatusCode());
+        cacheObject.setCreated(new Date());
         return cacheObject;
     }
 
@@ -33,5 +38,36 @@ public class FlashUtils {
             }
         }
         return ipAddress;
+    }
+
+    public static boolean isMatch(String word, String[] list) {
+        if (list.length > 0) {
+            for (String toCheck : list) {
+                if (word.matches(toCheck)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean isMatch(String[] words, String[] list) {
+        for (String word : words) {
+            if (isMatch(word, list)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isMatch(MultiValueMap<String, String> headers, String[] list) {
+        for (String header : headers.keySet()) {
+            List<String> headerContents = headers.get(header);
+            String[] itemsArray = new String[headerContents.size()];
+            if (isMatch(headerContents.toArray(itemsArray), list)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
