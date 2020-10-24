@@ -12,14 +12,13 @@ flash80:
     minutes: 0
     hours: 24
     limit: 1000
-    geo: true
+    geo:
+      continent: true
+      country: true
+      region: true
     site: true
     uri: true
     requestParams: true
-    header:
-      - test
-    cookie:
-      - test
   timeoutSeconds: 10
   excludes:
     urls:

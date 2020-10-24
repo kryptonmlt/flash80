@@ -10,6 +10,11 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.kryptonmlt.config.ApplicationProps;
 import org.kryptonmlt.config.FlashErrorHandler;
+import org.kryptonmlt.objects.CacheObject;
+import org.kryptonmlt.objects.Geo;
+import org.kryptonmlt.services.GeoService;
+import org.kryptonmlt.services.MemoryCache;
+import org.kryptonmlt.utils.FlashUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -40,6 +45,12 @@ public class WebController {
 
     @Autowired
     private ApplicationProps applicationProps;
+
+    @Autowired
+    private MemoryCache memoryCache;
+
+    @Autowired
+    private GeoService geoService;
 
     public HashMap<String, ApplicationProps.Server> sites = new HashMap<>();
 
@@ -131,18 +142,18 @@ public class WebController {
                 headerReq.put("host", vals);
             }
             try {
-
-                HttpEntity<String> entity = new HttpEntity<String>("body", headerReq);
-                ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, entity, String.class);
-                if (response.getStatusCodeValue() != 200) {
-                    if (response.getHeaders().get("location") != null) {
-                        log.debug("Received {} response with redirection: {}",response.getStatusCodeValue(),response.getHeaders().get("location"));
-                    }else{
-                        log.debug("Received {} response",response.getStatusCodeValue());
+                if (memoryCache.isCacheable(possibleHost, request.getRequestURI(), request.getQueryString(), headerReq)) {
+                    Geo geo = geoService.getGeo(FlashUtils.getIp(request));
+                    CacheObject cacheObject = memoryCache.get(geo, possibleHost, request.getRequestURI(), request.getQueryString(), headerReq);
+                    if (cacheObject == null) {
+                        ResponseEntity<String> response = performRequest(uri, headerReq);
+                        memoryCache.save(geo, possibleHost, request.getRequestURI(), request.getQueryString(), response);
+                        return response;
                     }
-
+                    return FlashUtils.toResponseEntity(cacheObject);
+                } else {
+                    return performRequest(uri, headerReq);
                 }
-                return response;
             } catch (Exception e) {
                 log.debug("error making request to backend {}", server.getHost(), e);
                 return new ResponseEntity<>("Error accessing backend", HttpStatus.BAD_GATEWAY);
@@ -151,6 +162,21 @@ public class WebController {
         log.debug("site {} has no backend associated with it", possibleHost);
         return new ResponseEntity<>("Site not hosted on this server", HttpStatus.BAD_GATEWAY);
     }
+
+    public ResponseEntity<String> performRequest(String uri, MultiValueMap<String, String> headerReq) {
+        HttpEntity<String> entity = new HttpEntity<String>("body", headerReq);
+        ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, entity, String.class);
+        if (response.getStatusCodeValue() != 200) {
+            if (response.getHeaders().get("location") != null) {
+                log.debug("Received {} response with redirection: {}", response.getStatusCodeValue(), response.getHeaders().get("location"));
+            } else {
+                log.debug("Received {} response", response.getStatusCodeValue());
+            }
+
+        }
+        return response;
+    }
+
 }
 
 

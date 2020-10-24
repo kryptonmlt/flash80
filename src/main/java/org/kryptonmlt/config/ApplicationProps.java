@@ -2,6 +2,7 @@ package org.kryptonmlt.config;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.kryptonmlt.objects.Geo;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
@@ -39,12 +40,20 @@ public class ApplicationProps {
         private int minutes;
         private int hours;
         private int limit;
-        private boolean geo;
+        private GeoProps geo;
         private boolean site;
         private boolean uri;
         private boolean requestParams;
-        private String[] header;
-        private String[] cookie;
+
+    }
+
+    @Data
+    @NoArgsConstructor
+    public static class GeoProps {
+
+        private boolean continent;
+        private boolean country;
+        private boolean region;
 
     }
 
