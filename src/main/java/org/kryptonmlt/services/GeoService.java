@@ -33,7 +33,6 @@ public class GeoService {
             reader = new DatabaseReader.Builder(database).withCache(new CHMCache()).build();
         } catch (IOException e) {
             log.error("Error reading maxmind DB, ", e);
-            System.exit(-1);
         }
     }
 
