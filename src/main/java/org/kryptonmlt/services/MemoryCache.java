@@ -55,8 +55,8 @@ public class MemoryCache {
                 || FlashUtils.isMatch(headers, applicationProps.getIncludes().getHeaders())
                 || FlashUtils.isMatch(headers, applicationProps.getIncludes().getCookies())) {
             if (!FlashUtils.isMatch(url, applicationProps.getExcludes().getUrls())
-                    || !FlashUtils.isMatch(headers, applicationProps.getExcludes().getHeaders())
-                    || !FlashUtils.isMatch(headers, applicationProps.getExcludes().getCookies())) {
+                    && !FlashUtils.isMatch(headers, applicationProps.getExcludes().getHeaders())
+                    && !FlashUtils.isMatch(headers, applicationProps.getExcludes().getCookies())) {
                 return true;
             }
         }

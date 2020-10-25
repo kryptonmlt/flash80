@@ -17,6 +17,7 @@ import java.util.Map;
 public class ApplicationProps {
 
     private int timeoutSeconds;
+    private String geodb;
     private Cache cache;
     private CacheRules excludes;
     private CacheRules includes;

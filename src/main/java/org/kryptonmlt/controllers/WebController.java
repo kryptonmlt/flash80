@@ -114,17 +114,18 @@ public class WebController {
             if (request.getScheme().equalsIgnoreCase("http")) {
                 port = server.getHttpPort();
             }
+            String queryString = (request.getQueryString() != null ? "?" +
+                    request.getQueryString() : "");
             String uri = request.getScheme() + "://" +   // "http" + "://
                     server.getHost() +       // "myhost"
                     ":" + port + // ":" + "8080"
                     request.getRequestURI() +       // "/people"
-                    (request.getQueryString() != null ? "?" +
-                            request.getQueryString() : ""); // "?" + "lastname=Fox&age=30"
+                    queryString; // "?" + "lastname=Fox&age=30"
             log.debug("URL: " + uri);
             MultiValueMap<String, String> headerReq = FlashUtils.constructRequestHeaders(request);
 
             try {
-                if (memoryCache.isCacheable(possibleHost, request.getRequestURI(), request.getQueryString(), headerReq)) {
+                if (memoryCache.isCacheable(possibleHost, request.getRequestURI(), queryString, headerReq)) {
                     Geo geo = geoService.getGeo(FlashUtils.getIp(request));
                     CacheObject cacheObject = memoryCache.get(geo, possibleHost, request.getRequestURI(), request.getQueryString(), headerReq);
                     if (cacheObject == null) {

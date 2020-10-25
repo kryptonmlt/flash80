@@ -5,7 +5,9 @@ import com.maxmind.geoip2.DatabaseReader;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CityResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.kryptonmlt.config.ApplicationProps;
 import org.kryptonmlt.objects.Geo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -20,10 +22,13 @@ public class GeoService {
 
     private DatabaseReader reader;
 
+    @Autowired
+    private ApplicationProps applicationProps;
+
     @PostConstruct
     public void init() {
         // A File object pointing to your GeoIP2 or GeoLite2 database
-        File database = new File("/path/to/GeoIP2-City.mmdb");
+        File database = new File(applicationProps.getGeodb());
         try {
             reader = new DatabaseReader.Builder(database).withCache(new CHMCache()).build();
         } catch (IOException e) {

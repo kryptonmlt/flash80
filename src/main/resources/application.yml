@@ -8,6 +8,7 @@ server:
     key-store-password: flash80
     key-alias: flash80
 flash80:
+  geodb: "C:\\PATH\TO\\flash80\\data\\GeoIP2-City.mmdb"
   cache:
     cronmilliseconds: 60000
     minutes: 0
