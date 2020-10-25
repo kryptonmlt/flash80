@@ -2,10 +2,13 @@ package org.kryptonmlt.utils;
 
 import org.kryptonmlt.objects.CacheObject;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 public class FlashUtils {
@@ -69,5 +72,30 @@ public class FlashUtils {
             }
         }
         return false;
+    }
+
+    public static MultiValueMap<String, String> constructRequestHeaders(HttpServletRequest request) {
+
+        MultiValueMap<String, String> headerReq = new LinkedMultiValueMap<>();
+        boolean foundHost = false;
+        Iterator<String> iter = request.getHeaderNames().asIterator();
+        while (iter.hasNext()) {
+            String key = iter.next();
+            String value = request.getHeader(key);
+            List<String> vals = new ArrayList<>();
+            if (key.equalsIgnoreCase("host")) {
+                vals.add(request.getServerName());
+                foundHost = true;
+            } else {
+                vals.add(value);
+            }
+            headerReq.put(key, vals);
+        }
+        if (!foundHost) {
+            List<String> vals = new ArrayList<>();
+            vals.add(request.getServerName());
+            headerReq.put("host", vals);
+        }
+        return headerReq;
     }
 }

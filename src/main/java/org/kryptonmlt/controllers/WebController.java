@@ -121,26 +121,8 @@ public class WebController {
                     (request.getQueryString() != null ? "?" +
                             request.getQueryString() : ""); // "?" + "lastname=Fox&age=30"
             log.debug("URL: " + uri);
-            MultiValueMap<String, String> headerReq = new LinkedMultiValueMap<>();
-            boolean foundHost = false;
-            Iterator<String> iter = request.getHeaderNames().asIterator();
-            while (iter.hasNext()) {
-                String key = iter.next();
-                String value = request.getHeader(key);
-                List<String> vals = new ArrayList<>();
-                if (key.equalsIgnoreCase("host")) {
-                    vals.add(request.getServerName());
-                    foundHost = true;
-                } else {
-                    vals.add(value);
-                }
-                headerReq.put(key, vals);
-            }
-            if (!foundHost) {
-                List<String> vals = new ArrayList<>();
-                vals.add(request.getServerName());
-                headerReq.put("host", vals);
-            }
+            MultiValueMap<String, String> headerReq = FlashUtils.constructRequestHeaders(request);
+
             try {
                 if (memoryCache.isCacheable(possibleHost, request.getRequestURI(), request.getQueryString(), headerReq)) {
                     Geo geo = geoService.getGeo(FlashUtils.getIp(request));
