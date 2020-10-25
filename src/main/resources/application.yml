@@ -1,3 +1,7 @@
+logging:
+  level:
+    org:
+      kryptonmlt: debug
 server:
   http:
     port: 80

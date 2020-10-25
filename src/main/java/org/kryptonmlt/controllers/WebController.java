@@ -121,16 +121,16 @@ public class WebController {
                     ":" + port + // ":" + "8080"
                     request.getRequestURI() +       // "/people"
                     queryString; // "?" + "lastname=Fox&age=30"
-            log.debug("URL: " + uri);
+            log.debug("URL: {} ({})", uri, possibleHost);
             MultiValueMap<String, String> headerReq = FlashUtils.constructRequestHeaders(request);
 
             try {
                 if (memoryCache.isCacheable(possibleHost, request.getRequestURI(), queryString, headerReq)) {
                     Geo geo = geoService.getGeo(FlashUtils.getIp(request));
-                    CacheObject cacheObject = memoryCache.get(geo, possibleHost, request.getRequestURI(), request.getQueryString(), headerReq);
+                    CacheObject cacheObject = memoryCache.get(geo, possibleHost, request.getRequestURI(), queryString, headerReq);
                     if (cacheObject == null) {
                         ResponseEntity<String> response = performRequest(uri, headerReq);
-                        memoryCache.save(geo, possibleHost, request.getRequestURI(), request.getQueryString(), response);
+                        memoryCache.save(geo, possibleHost, request.getRequestURI(), queryString, response);
                         return response;
                     }
                     return FlashUtils.toResponseEntity(cacheObject);
@@ -138,7 +138,7 @@ public class WebController {
                     return performRequest(uri, headerReq);
                 }
             } catch (Exception e) {
-                log.debug("error making request to backend {}", server.getHost(), e);
+                log.error("error making request to backend {}", server.getHost(), e);
                 return new ResponseEntity<>("Error accessing backend", HttpStatus.BAD_GATEWAY);
             }
         }

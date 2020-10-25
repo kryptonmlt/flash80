@@ -36,7 +36,7 @@ public class MemoryCache {
         log.debug("Starting cache cleaning");
         List<String> keysToDelete = new ArrayList<>();
         for (String key : cache.keySet()) {
-            if ((cache.get(key).getCreated().getTime() - cacheBustMS) > 0) {
+            if (System.currentTimeMillis() - (cache.get(key).getCreated().getTime() + cacheBustMS) > 0) {
                 keysToDelete.add(key);
             }
         }
@@ -102,6 +102,6 @@ public class MemoryCache {
         if (applicationProps.getCache().isRequestParams()) {
             key.append(requestParams);
         }
-        return key.toString();
+        return key.toString().replaceAll("/","-").replaceAll("\\.","-");
     }
 }
