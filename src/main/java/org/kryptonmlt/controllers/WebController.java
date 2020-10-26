@@ -21,10 +21,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
@@ -34,7 +32,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Properties;
 
 @RestController
 @Slf4j
@@ -99,7 +98,8 @@ public class WebController {
         }
     }
 
-    @RequestMapping(value = "**", method = RequestMethod.GET)
+    // method = {RequestMethod.GET, RequestMethod.DELETE, RequestMethod.HEAD, RequestMethod.OPTIONS, RequestMethod.PATCH, RequestMethod.POST, RequestMethod.PUT, RequestMethod.TRACE}
+    @RequestMapping(value = "**")
     public ResponseEntity<String> get(HttpServletRequest request, HttpServletResponse servResp) {
         String possibleHost = request.getRemoteHost();
         if (InetAddressUtils.isIPv4Address(possibleHost) || InetAddressUtils.isIPv6Address(possibleHost)) {
@@ -125,17 +125,17 @@ public class WebController {
             MultiValueMap<String, String> headerReq = FlashUtils.constructRequestHeaders(request);
 
             try {
-                if (memoryCache.isCacheable(possibleHost, request.getRequestURI(), queryString, headerReq)) {
+                if (request.getMethod().equalsIgnoreCase("get") && memoryCache.isCacheable(possibleHost, request.getRequestURI(), queryString, headerReq)) {
                     Geo geo = geoService.getGeo(FlashUtils.getIp(request));
                     CacheObject cacheObject = memoryCache.get(geo, possibleHost, request.getRequestURI(), queryString, headerReq);
                     if (cacheObject == null) {
-                        ResponseEntity<String> response = performRequest(uri, headerReq);
+                        ResponseEntity<String> response = performRequest(uri, headerReq, request.getMethod());
                         memoryCache.save(geo, possibleHost, request.getRequestURI(), queryString, response);
                         return response;
                     }
                     return FlashUtils.toResponseEntity(cacheObject);
                 } else {
-                    return performRequest(uri, headerReq);
+                    return performRequest(uri, headerReq, request.getMethod());
                 }
             } catch (Exception e) {
                 log.error("error making request to backend {}", server.getHost(), e);
@@ -146,9 +146,9 @@ public class WebController {
         return new ResponseEntity<>("Site not hosted on this server", HttpStatus.BAD_GATEWAY);
     }
 
-    public ResponseEntity<String> performRequest(String uri, MultiValueMap<String, String> headerReq) {
+    public ResponseEntity<String> performRequest(String uri, MultiValueMap<String, String> headerReq, String method) {
         HttpEntity<String> entity = new HttpEntity<String>("body", headerReq);
-        ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, entity, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.valueOf(method), entity, String.class);
         if (response.getStatusCodeValue() != 200) {
             if (response.getHeaders().get("location") != null) {
                 log.debug("Received {} response with redirection: {}", response.getStatusCodeValue(), response.getHeaders().get("location"));
