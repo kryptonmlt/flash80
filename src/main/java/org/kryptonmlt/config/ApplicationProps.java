@@ -18,6 +18,7 @@ public class ApplicationProps {
 
     private int timeoutSeconds;
     private String geodb;
+    private String[] purgers;
     private Cache cache;
     private CacheRules excludes;
     private CacheRules includes;

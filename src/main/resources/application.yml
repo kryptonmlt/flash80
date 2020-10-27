@@ -12,6 +12,9 @@ server:
     key-store-password: flash80
     key-alias: flash80
 flash80:
+  purgers:
+    - 127.0.0.1
+    - localhost
   geodb: "/opt/flash80/GeoIP2-City.mmdb"
   cache:
     cronmilliseconds: 60000
