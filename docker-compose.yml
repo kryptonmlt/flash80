@@ -2,10 +2,10 @@ version: "3.5"
 
 services:
 
-  varnish:
-    image: openjdk:15-jdk
+  flash80:
+    image: library/openjdk:15-jdk
     volumes:
-      - './target/flash80-0.0.1-SNAPSHOT.jar:/opt/flash80/flash80.jar'
+      - './flash80/target/flash80-0.0.1-SNAPSHOT.jar:/opt/flash80/flash80.jar'
       - './data/GeoIP2-City.mmdb:/opt/flash80/GeoIP2-City.mmdb'
     command: [ 'java','-jar','/opt/flash80/flash80.jar' ]
     ports:
@@ -19,6 +19,14 @@ services:
       options:
         max-size: "30m"
         max-file: "2"
+
+  maven:
+    image: library/maven:3-openjdk-15
+    command: [ "mvn", "clean", "install" ]
+    working_dir: /app
+    volumes:
+      - './flash80:/app'
+      - './data/.m2:/root/.m2/'
 
 networks:
   default:
