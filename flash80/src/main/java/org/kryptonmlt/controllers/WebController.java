@@ -11,6 +11,7 @@ import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.kryptonmlt.config.ApplicationProps;
 import org.kryptonmlt.config.FlashErrorHandler;
 import org.kryptonmlt.objects.CacheObject;
+import org.kryptonmlt.objects.Flash80Request;
 import org.kryptonmlt.objects.Geo;
 import org.kryptonmlt.services.GeoService;
 import org.kryptonmlt.services.MemoryCache;
@@ -102,60 +103,49 @@ public class WebController {
     // method = {RequestMethod.GET, RequestMethod.DELETE, RequestMethod.HEAD, RequestMethod.OPTIONS, RequestMethod.PATCH, RequestMethod.POST, RequestMethod.PUT, RequestMethod.TRACE}
     @RequestMapping(value = "**")
     public ResponseEntity<String> get(HttpServletRequest request, HttpServletResponse servResp) {
-        String possibleHost = request.getRemoteHost();
-        if (InetAddressUtils.isIPv4Address(possibleHost) || InetAddressUtils.isIPv6Address(possibleHost)) {
-            String hostHeader = request.getHeader("host");
-            if (hostHeader != null && !hostHeader.isEmpty()) {
-                possibleHost = hostHeader;
+
+        Flash80Request flash80Request = FlashUtils.toFlash80Request(request, geoService.getGeo(FlashUtils.getIp(request)));
+
+        if (request.getMethod().equalsIgnoreCase("purge")) {
+            if (Arrays.stream(applicationProps.getPurgers()).anyMatch(FlashUtils.getIp(request)::equals)) {
+                memoryCache.remove(false, flash80Request);
+                return new ResponseEntity<>("PURGE success", HttpStatus.OK);
+            }else{
+                return new ResponseEntity<>("This IP is not allowed to PURGE", HttpStatus.METHOD_NOT_ALLOWED);
+            }
+        } else if (request.getMethod().equalsIgnoreCase("ban")) {
+            if (Arrays.stream(applicationProps.getPurgers()).anyMatch(FlashUtils.getIp(request)::equals)) {
+                memoryCache.remove(true, flash80Request);
+                return new ResponseEntity<>("BAN success", HttpStatus.OK);
+            }else{
+                return new ResponseEntity<>("This IP is not allowed to BAN", HttpStatus.METHOD_NOT_ALLOWED);
             }
         }
-        /*
-        TODO: PURGING FEATURE
-        if(request.getMethod().equalsIgnoreCase("purge")){
-            if(Arrays.stream(applicationProps.getPurgers()).anyMatch(FlashUtils.getIp(request)::equals)){
-                memoryCache.remove(false,"");
-            }
-        }else if(request.getMethod().equalsIgnoreCase("ban")){
-            if(Arrays.stream(applicationProps.getPurgers()).anyMatch(FlashUtils.getIp(request)::equals)){
-                memoryCache.remove(false,"");
-            }
-        }*/
 
-        ApplicationProps.Server server = sites.get(possibleHost);
+        ApplicationProps.Server server = sites.get(flash80Request.getSite());
         if (server != null) {
-            int port = server.getHttpsPort();
-            if (request.getScheme().equalsIgnoreCase("http")) {
-                port = server.getHttpPort();
-            }
-            String queryString = (request.getQueryString() != null ? "?" +
-                    request.getQueryString() : "");
-            String uri = request.getScheme() + "://" +   // "http" + "://
-                    server.getHost() +       // "myhost"
-                    ":" + port + // ":" + "8080"
-                    request.getRequestURI() +       // "/people"
-                    queryString; // "?" + "lastname=Fox&age=30"
-            log.debug("URL: {} ({})", uri, possibleHost);
-            MultiValueMap<String, String> headerReq = FlashUtils.constructRequestHeaders(request);
+
+            log.debug("URL: {} ({})", flash80Request.getFullUrl(server), flash80Request.getSite());
 
             try {
-                if (request.getMethod().equalsIgnoreCase("get") && memoryCache.isCacheable(possibleHost, request.getRequestURI(), queryString, headerReq)) {
-                    Geo geo = geoService.getGeo(FlashUtils.getIp(request));
-                    CacheObject cacheObject = memoryCache.get(geo, possibleHost, request.getRequestURI(), queryString, headerReq);
+                if (request.getMethod().equalsIgnoreCase("get") && memoryCache.isCacheable(flash80Request, flash80Request.getHeaderReq())) {
+
+                    CacheObject cacheObject = memoryCache.get(flash80Request);
                     if (cacheObject == null) {
-                        ResponseEntity<String> response = performRequest(uri, headerReq, request.getMethod());
-                        memoryCache.save(geo, possibleHost, request.getRequestURI(), queryString, response);
+                        ResponseEntity<String> response = performRequest(flash80Request.getFullUrl(server), flash80Request.getHeaderReq(), request.getMethod());
+                        memoryCache.save(flash80Request, response);
                         return response;
                     }
                     return FlashUtils.toResponseEntity(cacheObject);
                 } else {
-                    return performRequest(uri, headerReq, request.getMethod());
+                    return performRequest(flash80Request.getFullUrl(server), flash80Request.getHeaderReq(), request.getMethod());
                 }
             } catch (Exception e) {
                 log.error("error making request to backend {}", server.getHost(), e);
                 return new ResponseEntity<>("Error accessing backend", HttpStatus.BAD_GATEWAY);
             }
         }
-        log.debug("site {} has no backend associated with it", possibleHost);
+        log.debug("site {} has no backend associated with it", flash80Request.getSite());
         return new ResponseEntity<>("Site not hosted on this server", HttpStatus.BAD_GATEWAY);
     }
 

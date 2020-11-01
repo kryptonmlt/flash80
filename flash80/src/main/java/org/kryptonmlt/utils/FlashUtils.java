@@ -1,6 +1,9 @@
 package org.kryptonmlt.utils;
 
+import org.apache.http.conn.util.InetAddressUtils;
 import org.kryptonmlt.objects.CacheObject;
+import org.kryptonmlt.objects.Flash80Request;
+import org.kryptonmlt.objects.Geo;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -19,6 +22,33 @@ public class FlashUtils {
 
     public static ResponseEntity<String> toResponseEntity(CacheObject cacheObject) {
         return new ResponseEntity<String>(cacheObject.getData(), cacheObject.getHeaders(), cacheObject.getStatusCode());
+    }
+
+    public static Flash80Request toFlash80Request(HttpServletRequest request, Geo geo) {
+        Flash80Request flash80Request = new Flash80Request();
+        flash80Request.setUri(request.getRequestURI());
+
+        String possibleHost = request.getRemoteHost();
+        if (InetAddressUtils.isIPv4Address(possibleHost) || InetAddressUtils.isIPv6Address(possibleHost)) {
+            String hostHeader = request.getHeader("host");
+            if (hostHeader != null && !hostHeader.isEmpty()) {
+                possibleHost = hostHeader;
+            }
+        }
+        flash80Request.setSite(possibleHost);
+
+        String queryString = (request.getQueryString() != null ? "?" +
+                request.getQueryString() : "");
+        flash80Request.setRequestParams(queryString);
+
+        flash80Request.setGeo(geo);
+
+        flash80Request.setHeaderReq(FlashUtils.constructRequestHeaders(request));
+
+
+        flash80Request.setScheme(request.getScheme());
+
+        return flash80Request;
     }
 
     public static CacheObject toCacheObject(ResponseEntity<String> response) {
