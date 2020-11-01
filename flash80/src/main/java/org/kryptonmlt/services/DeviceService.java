@@ -1,20 +1,17 @@
 package org.kryptonmlt.services;
 
-import com.blueconic.browscap.*;
-import com.maxmind.geoip2.exception.GeoIp2Exception;
-import com.maxmind.geoip2.model.CityResponse;
+import com.blueconic.browscap.BrowsCapField;
+import com.blueconic.browscap.Capabilities;
+import com.blueconic.browscap.UserAgentParser;
+import com.blueconic.browscap.UserAgentService;
 import lombok.extern.slf4j.Slf4j;
 import org.kryptonmlt.config.ApplicationProps;
-import org.kryptonmlt.objects.Geo;
 import org.kryptonmlt.objects.UserAgentInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 
 @Component

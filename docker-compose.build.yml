@@ -1,0 +1,15 @@
+version: "3.5"
+
+services:
+
+  maven:
+    image: library/maven:3-openjdk-15
+    command: [ "mvn", "clean", "install" ]
+    working_dir: /app
+    volumes:
+      - './flash80:/app'
+      - './data/.m2:/root/.m2/'
+      - './data/GeoIP2-City.mmdb:/opt/flash80/GeoIP2-City.mmdb'
+
+networks:
+  default:

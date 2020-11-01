@@ -7,9 +7,9 @@
 - **hosts** property manages the backend hosts. Each host can have many sites. The current file contains an example change it accordingly to point to your sites.
 - **includes/excludes** determine what flash80 should cache or not. The current example is tweaked for wordpress sites.
 ## Build
-- **docker-compose up maven**
+- **docker-compose -f docker-compose.build.yml up**
     - First build will take around 1 minute due to downloading dependencies
     - Configuration change requires a rebuild, will be fixed later
 ## Run
 - Extract data/geo-databases.zip to data/
-- **docker-compose up flash80**
+- **docker-compose up**

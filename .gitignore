@@ -36,3 +36,7 @@ build/
 
 #maven
 data/.m2/
+
+#geo
+data/GeoIP2-City.mmdb
+data/GeoIP2-Country.mmdb
