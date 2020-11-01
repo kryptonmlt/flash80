@@ -13,6 +13,7 @@ import org.kryptonmlt.config.FlashErrorHandler;
 import org.kryptonmlt.objects.CacheObject;
 import org.kryptonmlt.objects.Flash80Request;
 import org.kryptonmlt.objects.Geo;
+import org.kryptonmlt.services.DeviceService;
 import org.kryptonmlt.services.GeoService;
 import org.kryptonmlt.services.MemoryCache;
 import org.kryptonmlt.utils.FlashUtils;
@@ -52,6 +53,9 @@ public class WebController {
 
     @Autowired
     private GeoService geoService;
+
+    @Autowired
+    private DeviceService deviceService;
 
     public HashMap<String, ApplicationProps.Server> sites = new HashMap<>();
 
@@ -104,7 +108,7 @@ public class WebController {
     @RequestMapping(value = "**")
     public ResponseEntity<String> get(HttpServletRequest request, HttpServletResponse servResp) {
 
-        Flash80Request flash80Request = FlashUtils.toFlash80Request(request, geoService.getGeo(FlashUtils.getIp(request)));
+        Flash80Request flash80Request = FlashUtils.toFlash80Request(request, geoService.getGeo(FlashUtils.getIp(request)), deviceService.getUserAgent(request));
 
         if (request.getMethod().equalsIgnoreCase("purge")) {
             if (Arrays.stream(applicationProps.getPurgers()).anyMatch(FlashUtils.getIp(request)::equals)) {

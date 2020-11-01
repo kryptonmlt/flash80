@@ -4,6 +4,7 @@ import org.apache.http.conn.util.InetAddressUtils;
 import org.kryptonmlt.objects.CacheObject;
 import org.kryptonmlt.objects.Flash80Request;
 import org.kryptonmlt.objects.Geo;
+import org.kryptonmlt.objects.UserAgentInfo;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -24,7 +25,7 @@ public class FlashUtils {
         return new ResponseEntity<String>(cacheObject.getData(), cacheObject.getHeaders(), cacheObject.getStatusCode());
     }
 
-    public static Flash80Request toFlash80Request(HttpServletRequest request, Geo geo) {
+    public static Flash80Request toFlash80Request(HttpServletRequest request, Geo geo, UserAgentInfo userAgentInfo) {
         Flash80Request flash80Request = new Flash80Request();
         flash80Request.setUri(request.getRequestURI());
 
@@ -47,6 +48,8 @@ public class FlashUtils {
 
 
         flash80Request.setScheme(request.getScheme());
+
+        flash80Request.setUserAgentInfo(userAgentInfo);
 
         return flash80Request;
     }

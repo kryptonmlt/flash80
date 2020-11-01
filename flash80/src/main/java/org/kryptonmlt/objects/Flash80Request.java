@@ -16,6 +16,7 @@ public class Flash80Request {
     private String uri;
     private String requestParams;
     private MultiValueMap<String, String> headerReq;
+    private UserAgentInfo userAgentInfo;
 
     public String getFullUrl(ApplicationProps.Server server){
         int port = server.getHttpsPort();

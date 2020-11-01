@@ -46,6 +46,8 @@ public class ApplicationProps {
         private boolean site;
         private boolean uri;
         private boolean requestParams;
+        private boolean device;
+        private boolean browser;
 
     }
 

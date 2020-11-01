@@ -13,9 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -37,9 +35,9 @@ public class MemoryCache {
     public void cacheClearer() {
         log.debug("Starting cache cleaning");
         List<String> keysToDelete = new ArrayList<>();
-        for (String key : cache.keySet()) {
-            if (System.currentTimeMillis() - (cache.get(key).getCreated().getTime() + cacheBustMS) > 0) {
-                keysToDelete.add(key);
+        for (Map.Entry<String, CacheObject> key : cache.entrySet()) {
+            if (System.currentTimeMillis() - (key.getValue().getCreated().getTime() + cacheBustMS) > 0) {
+                keysToDelete.add(key.getKey());
             }
         }
         log.debug("Deleting {} objects from cache", keysToDelete.size());
@@ -54,11 +52,11 @@ public class MemoryCache {
         String url = flash80Request.getSite() + flash80Request.getUri() + flash80Request.getRequestParams();
 
         if (FlashUtils.isMatch(url, applicationProps.getIncludes().getUrls())
-                || FlashUtils.isMatch(flash80Request.getHeaderReq(), applicationProps.getIncludes().getHeaders())
-                || FlashUtils.isMatch(flash80Request.getHeaderReq(), applicationProps.getIncludes().getCookies())) {
+                || FlashUtils.isMatch(headers, applicationProps.getIncludes().getHeaders())
+                || FlashUtils.isMatch(headers, applicationProps.getIncludes().getCookies())) {
             if (!FlashUtils.isMatch(url, applicationProps.getExcludes().getUrls())
-                    && !FlashUtils.isMatch(flash80Request.getHeaderReq(), applicationProps.getExcludes().getHeaders())
-                    && !FlashUtils.isMatch(flash80Request.getHeaderReq(), applicationProps.getExcludes().getCookies())) {
+                    && !FlashUtils.isMatch(headers, applicationProps.getExcludes().getHeaders())
+                    && !FlashUtils.isMatch(headers, applicationProps.getExcludes().getCookies())) {
                 return true;
             }
         }
@@ -66,7 +64,7 @@ public class MemoryCache {
     }
 
     public CacheObject get(Flash80Request flash80Request) {
-        String key = this.buildCacheKey(flash80Request.getGeo(), flash80Request.getSite(), flash80Request.getUri(), flash80Request.getRequestParams());
+        String key = this.buildCacheKey(flash80Request);
         return cache.get(key);
     }
 
@@ -77,37 +75,53 @@ public class MemoryCache {
         }
 
         if (this.isCacheable(flash80Request, response.getHeaders())) {
-            String key = this.buildCacheKey(flash80Request.getGeo(), flash80Request.getSite(), flash80Request.getUri(), flash80Request.getRequestParams());
+            String key = this.buildCacheKey(flash80Request);
             return cache.put(key, FlashUtils.toCacheObject(response));
         }
         return null;
     }
 
-    public String buildCacheKey(Geo geo, String site, String uri, String requestParams) {
+    public String buildCacheKey(Flash80Request flash80Request) {
 
         StringBuilder key = new StringBuilder();
         if (applicationProps.getCache().getGeo().isContinent()) {
-            key.append(geo.getContinent());
+            key.append(flash80Request.getGeo().getContinent());
         }
         if (applicationProps.getCache().getGeo().isCountry()) {
-            key.append(geo.getCountry());
+            key.append(flash80Request.getGeo().getCountry());
         }
         if (applicationProps.getCache().getGeo().isRegion()) {
-            key.append(geo.getRegion());
+            key.append(flash80Request.getGeo().getRegion());
         }
         if (applicationProps.getCache().isSite()) {
-            key.append(site);
+            key.append(flash80Request.getSite());
         }
         if (applicationProps.getCache().isUri()) {
-            key.append(uri);
+            key.append(flash80Request.getUri());
         }
         if (applicationProps.getCache().isRequestParams()) {
-            key.append(requestParams);
+            key.append(flash80Request.getRequestParams());
+        }
+        if (applicationProps.getCache().isDevice()) {
+            key.append(flash80Request.getUserAgentInfo().getDevice());
+        }
+        if (applicationProps.getCache().isBrowser()) {
+            key.append(flash80Request.getUserAgentInfo().getBrowser());
         }
         return key.toString().replaceAll("/", "-").replaceAll("\\.", "-");
     }
 
     public void remove(boolean matchAll, Flash80Request flash80Request) {
-
+        String key = this.buildCacheKey(flash80Request);
+        if (matchAll) {
+            Set<String> keys = new HashSet<>(cache.keySet());
+            for (String k : keys) {
+                if (k.contains(key)) {
+                    cache.remove(k);
+                }
+            }
+        } else {
+            cache.remove(key);
+        }
     }
 }

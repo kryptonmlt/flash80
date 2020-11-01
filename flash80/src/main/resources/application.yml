@@ -25,16 +25,18 @@ flash80:
       continent: true
       country: true
       region: true
+    device: true
+    browser: false
     site: true
     uri: true
     requestParams: true
   timeoutSeconds: 10
   excludes:
     urls:
-      - ^[^.]+$
-      - backend
-      - wp-admin
-      - wp-login
+      - '[.]{1}[\da-zA-Z]{3}$'
+      - 'backend'
+      - 'wp-admin'
+      - 'wp-login'
     headers:
       - logged_in
       - wp_logged_in
