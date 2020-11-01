@@ -26,7 +26,7 @@ public class DeviceService {
     @PostConstruct
     public void init() {
         try {
-            UserAgentParser parser =
+            parser =
                     new UserAgentService().loadParser(Arrays.asList(BrowsCapField.BROWSER, BrowsCapField.DEVICE_TYPE));
         } catch (Exception e) {
             log.error("Error loading UserAgentService: ", e);
