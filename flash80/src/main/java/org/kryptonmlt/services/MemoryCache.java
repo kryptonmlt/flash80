@@ -48,6 +48,10 @@ public class MemoryCache {
 
     }
 
+    public HashMap<String, CacheObject> getCache() {
+        return cache;
+    }
+
     public boolean isCacheable(Flash80Request flash80Request, MultiValueMap<String, String> headers) {
         String url = flash80Request.getSite() + flash80Request.getUri() + flash80Request.getRequestParams();
 

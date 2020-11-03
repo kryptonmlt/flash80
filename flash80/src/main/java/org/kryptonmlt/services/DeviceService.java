@@ -38,7 +38,7 @@ public class DeviceService {
         if (useragent == null || useragent.isEmpty()) {
             return new UserAgentInfo();
         }
-        Capabilities capabilites = parser.parse(useragent);
-        return new UserAgentInfo(capabilites.getBrowser(), capabilites.getDeviceType());
+        Capabilities capabilities = parser.parse(useragent);
+        return new UserAgentInfo(capabilities.getBrowser(), capabilities.getDeviceType());
     }
 }

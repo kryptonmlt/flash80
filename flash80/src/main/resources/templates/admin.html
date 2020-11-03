@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Flash80 Admin: Cache Viewer</title>
+    <script>
+
+    window.addEventListener("load", function () {
+      var buttons = document.getElementsByClassName("delete-button");
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].addEventListener("click", function () {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    location.reload();
+                }
+            };
+            var params = this.dataset.key;
+            xhttp.open( "POST", "/flash80/cache/delete", true);
+            xhttp.send(params);
+        });
+      }
+    });
+  </script>
+</head>
+<body>
+<div th:switch="${cacheObjects}">
+    <h2 th:case="null">Cache is empty</h2>
+    <div th:case="*">
+        <h2>Flash80: Cache Viewer</h2>
+        <table border="1">
+            <thead>
+            <tr>
+                <th>Key</th>
+                <th>Status Code</th>
+                <th>Data MB</th>
+                <th>Date Created</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="cacheObject : ${cacheObjects}">
+                <td th:text="${cacheObject.key}"></td>
+                <td th:text="${cacheObject.statusCode}"></td>
+                <td th:text="${cacheObject.dataMB}"></td>
+                <td th:text="${cacheObject.created}"></td>
+                <td>
+                    <button class="delete-button" type="button" th:data-key="${cacheObject.key}">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

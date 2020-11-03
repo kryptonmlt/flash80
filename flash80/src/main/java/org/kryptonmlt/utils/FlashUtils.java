@@ -1,19 +1,13 @@
 package org.kryptonmlt.utils;
 
 import org.apache.http.conn.util.InetAddressUtils;
-import org.kryptonmlt.objects.CacheObject;
-import org.kryptonmlt.objects.Flash80Request;
-import org.kryptonmlt.objects.Geo;
-import org.kryptonmlt.objects.UserAgentInfo;
+import org.kryptonmlt.objects.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class FlashUtils {
 
@@ -22,7 +16,7 @@ public class FlashUtils {
     }
 
     public static ResponseEntity<String> toResponseEntity(CacheObject cacheObject) {
-        return new ResponseEntity<String>(cacheObject.getData(), cacheObject.getHeaders(), cacheObject.getStatusCode());
+        return new ResponseEntity<>(cacheObject.getData(), cacheObject.getHeaders(), cacheObject.getStatusCode());
     }
 
     public static Flash80Request toFlash80Request(HttpServletRequest request, Geo geo, UserAgentInfo userAgentInfo) {
@@ -61,6 +55,27 @@ public class FlashUtils {
         cacheObject.setStatusCode(response.getStatusCode());
         cacheObject.setCreated(new Date());
         return cacheObject;
+    }
+
+    public static UICacheObject toUICacheObject(String key, CacheObject cacheObject) {
+        UICacheObject uiCacheObject = new UICacheObject();
+        uiCacheObject.setKey(key);
+        uiCacheObject.setDataMB(cacheObject.getData().length() * 0.000001f);
+        uiCacheObject.setStatusCode(cacheObject.getStatusCode());
+        uiCacheObject.setCreated(cacheObject.getCreated());
+        return uiCacheObject;
+    }
+
+    public static List<UICacheObject> toUICacheObject(Map<String, CacheObject> cache) {
+        List<UICacheObject> uiCacheObjects = new ArrayList<>();
+        Set<String> keys = new HashSet<>(cache.keySet());
+        for (String key : keys) {
+            CacheObject cacheObject = cache.get(key);
+            if (cacheObject != null) {
+                uiCacheObjects.add(FlashUtils.toUICacheObject(key, cacheObject));
+            }
+        }
+        return uiCacheObjects;
     }
 
     public static String getIp(HttpServletRequest request) {

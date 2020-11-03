@@ -13,3 +13,5 @@
 ## Run
 - Extract data/geo-databases.zip to data/
 - **docker-compose up**
+## Manage
+- Once container is up use **https://127.0.0.1/flash80/cache** to manage the cache

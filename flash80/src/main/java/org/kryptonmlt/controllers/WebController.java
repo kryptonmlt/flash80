@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.conn.util.InetAddressUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.LaxRedirectStrategy;
@@ -12,7 +11,6 @@ import org.kryptonmlt.config.ApplicationProps;
 import org.kryptonmlt.config.FlashErrorHandler;
 import org.kryptonmlt.objects.CacheObject;
 import org.kryptonmlt.objects.Flash80Request;
-import org.kryptonmlt.objects.Geo;
 import org.kryptonmlt.services.DeviceService;
 import org.kryptonmlt.services.GeoService;
 import org.kryptonmlt.services.MemoryCache;
@@ -43,7 +41,6 @@ import java.util.Properties;
 public class WebController {
 
     private RestTemplate restTemplate;
-    private CloseableHttpClient httpClient;
 
     @Autowired
     private ApplicationProps applicationProps;
@@ -62,7 +59,6 @@ public class WebController {
     @PostConstruct
     private void init() {
         final Properties props = System.getProperties();
-        //-Djdk.httpclient.allowRestrictedHeaders=host,connection
         props.setProperty("jdk.internal.httpclient.disableHostnameVerification", Boolean.TRUE.toString());
         props.setProperty("jdk.httpclient.allowRestrictedHeaders", "host,connection");
         for (ApplicationProps.Server host : applicationProps.getHosts()) {
@@ -86,7 +82,7 @@ public class WebController {
             };
             SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
             SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier());
-            httpClient
+            CloseableHttpClient httpClient
                     = HttpClients.custom()
                     .setSSLHostnameVerifier(new NoopHostnameVerifier())
                     .setRedirectStrategy(new LaxRedirectStrategy())
@@ -114,14 +110,14 @@ public class WebController {
             if (Arrays.stream(applicationProps.getPurgers()).anyMatch(FlashUtils.getIp(request)::equals)) {
                 memoryCache.remove(false, flash80Request);
                 return new ResponseEntity<>("PURGE success", HttpStatus.OK);
-            }else{
+            } else {
                 return new ResponseEntity<>("This IP is not allowed to PURGE", HttpStatus.METHOD_NOT_ALLOWED);
             }
         } else if (request.getMethod().equalsIgnoreCase("ban")) {
             if (Arrays.stream(applicationProps.getPurgers()).anyMatch(FlashUtils.getIp(request)::equals)) {
                 memoryCache.remove(true, flash80Request);
                 return new ResponseEntity<>("BAN success", HttpStatus.OK);
-            }else{
+            } else {
                 return new ResponseEntity<>("This IP is not allowed to BAN", HttpStatus.METHOD_NOT_ALLOWED);
             }
         }
@@ -154,7 +150,7 @@ public class WebController {
     }
 
     public ResponseEntity<String> performRequest(String uri, MultiValueMap<String, String> headerReq, String method) {
-        HttpEntity<String> entity = new HttpEntity<String>("body", headerReq);
+        HttpEntity<String> entity = new HttpEntity<>("body", headerReq);
         ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.valueOf(method), entity, String.class);
         if (response.getStatusCodeValue() != 200) {
             if (response.getHeaders().get("location") != null) {
